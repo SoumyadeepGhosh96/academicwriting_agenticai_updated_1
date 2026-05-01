@@ -163,15 +163,29 @@ route_prompt = ChatPromptTemplate([
 ])
 question_router = route_prompt | structured_llm_router
 
-# ------------------- RAG CHAIN (prompt pulled from LangSmith if available) -------------------
+# ------------------- Enterprise prompts and RAG CHAIN -------------------
+enterprise_system_prompt = (
+    "You are an expert enterprise AI assistant for academic writing, research, and professional communication.\n"
+    "Respond in a courteous, concise, and polished style.\n"
+    "For greetings or small talk, reply politely with a brief friendly acknowledgement and offer help.\n"
+    "For questions, answer directly using the available context, avoid hallucination, and say you need more information if you cannot answer confidently.\n"
+    "Keep responses professional, clear, and suitable for a business or academic audience."
+)
+
+chat_system_prompt = (
+    "You are an expert enterprise AI assistant for academic writing, research, and professional communication.\n"
+    "Respond in a courteous, concise, and polished style.\n"
+    "For greetings or small talk, reply politely with a brief friendly acknowledgement and offer help."
+)
+
 client = Client()
 try:
     prompt = client.pull_prompt("rlm/rag-prompt")
 except Exception:
-    # Fallback simple prompt if pull fails (keeps code robust)
+    # Fallback enterprise prompt if pull fails (keeps code robust)
     from langchain_core.prompts import PromptTemplate
     prompt = PromptTemplate.from_template(
-        "You are a helpful assistant. Use the provided context to answer the question.\n\nContext:\n{context}\n\nQuestion:\n{question}\n\nAnswer concisely."
+        f"{enterprise_system_prompt}\n\nContext:\n{{context}}\n\nQuestion:\n{{question}}\n\nAnswer:"
     )
 # Compose rag_chain: prompt -> llm -> string parser
 try:
@@ -267,7 +281,7 @@ def chat_node(state):
     chat_history = state.get("chat_history", [])
 
     # Build history-aware conversation (last 10 turns)
-    messages = []
+    messages = [{"role": "system", "content": chat_system_prompt}]
     for m in chat_history[-10:]:
         if m["role"] == "user":
             messages.append({"role": "user", "content": m["content"]})
