@@ -10,7 +10,8 @@ from typing import Literal
 
 # ------------------- ENV SETUP -------------------
 load_dotenv()
-os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY", "")
+# os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY", "")
+os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY","")
 os.environ["HF_API_KEY"] = os.getenv("HF_API_KEY", "")
 os.environ["TAVILY_API_KEY"] = os.getenv("TAVILY_API_KEY", "")
 
@@ -21,6 +22,7 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores.faiss import FAISS
 from langchain_tavily import TavilySearch
 from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langgraph.graph import StateGraph, START, END
@@ -143,7 +145,8 @@ class RouteQuery(BaseModel):
     )
 
 # Primary LLM (Gemini via ChatGoogleGenerativeAI)
-llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+# llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+llm = ChatOpenAI(model="gpt-5-nano")
 structured_llm_router = llm.with_structured_output(RouteQuery)
 
 system_router = (
@@ -273,7 +276,7 @@ def chat_node(state):
     # Add current question
     messages.append({"role": "user", "content": question})
 
-    # Call the Gemini chat model properly
+    # Call the Gemini/OpenAI chat model properly
     try:
         response = llm.invoke(messages)
         # response can be an AIMessage with .content or a string
